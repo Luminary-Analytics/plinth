@@ -2,7 +2,7 @@
 
 > **Plinth**: the stable base your game stands on. An open-source, code-first, AI-first 3D game engine that lets solo devs and small teams use AI agents to build high-performance 3D games — built on Bevy.
 >
-> Name verified available 2026-06-11: crates.io `plinth` free; GitHub orgs `plinthengine` and `plinth-engine` free; `plinth.games` unregistered. **To claim manually:** GitHub org, domain, crates.io name (publish a 0.0.1 stub or claim at first real publish).
+> Name verified available 2026-06-11: crates.io `plinth` free; `plinth.games` unregistered. Home: [github.com/Luminary-Analytics/plinth](https://github.com/Luminary-Analytics/plinth). Remaining claims: `plinth.games` domain (Rich); crates.io `plinth` + `plinth-cli` (reserve via 0.0.1 stubs).
 >
 > Status: decisions ratified 2026-06-11 via design interview. Owner: Rich Bellantoni.
 

@@ -6,7 +6,7 @@ members = ["crates/plinth", "crates/plinth-cli"]
 version = "0.0.1"
 edition = "2024"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/plinthengine/plinth"
+repository = "https://github.com/Luminary-Analytics/plinth"
 authors = ["Rich Bellantoni and Plinth contributors"]
 
 [workspace.dependencies]
