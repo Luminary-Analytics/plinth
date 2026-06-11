@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = ["crates/plinth", "crates/plinth-cli"]
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/plinthengine/plinth"
+authors = ["Rich Bellantoni and Plinth contributors"]
+
+[workspace.dependencies]
+# Plinth pins one Bevy minor per release and absorbs migration churn for users.
+bevy = "0.18"
+clap = { version = "4", features = ["derive"] }
+
+# Compile-time budgets are a Plinth feature: light optimization for our code,
+# full optimization for dependencies, so dev rebuilds stay fast and the game
+# stays playable.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3

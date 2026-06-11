@@ -1,0 +1,13 @@
+[package]
+name = "plinth"
+description = "The stable base your game stands on — an AI-first, code-first 3D game framework built on Bevy."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["gamedev", "game-engine", "bevy", "3d", "ai"]
+categories = ["game-engines", "game-development"]
+
+[dependencies]
+bevy = { workspace = true }

@@ -1,0 +1,15 @@
+[package]
+name = "plinth-cli"
+description = "Command-line tool for the Plinth game engine: scaffold, validate, and serve projects."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "plinth"
+path = "src/main.rs"
+
+[dependencies]
+clap = { workspace = true }
