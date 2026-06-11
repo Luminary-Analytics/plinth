@@ -13,7 +13,7 @@ Thanks for your interest — early contributors shape everything here.
 
 1. Install stable Rust via [rustup](https://rustup.rs) (the pinned toolchain in `rust-toolchain.toml` applies automatically).
 2. Linux only: install Bevy's system dependencies, e.g. on Debian/Ubuntu:
-   `sudo apt-get install libasound2-dev libudev-dev pkg-config`
+   `sudo apt-get install libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev pkg-config`
 3. `cargo test --workspace` should pass before you open a PR; CI also runs `cargo fmt --check` and `cargo clippy -- -D warnings`.
 
 ## Where help is wanted right now
