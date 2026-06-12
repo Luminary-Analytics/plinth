@@ -35,13 +35,18 @@
 //! ```
 
 mod diag;
+mod manifest;
 mod types;
 mod validate;
 
-pub use diag::{DiagKind, Diagnostic};
+pub use diag::{DiagKind, Diagnostic, Severity};
+pub use manifest::{
+    AssetEntry, AssetManifest, KNOWN_LICENSES, SUPPORTED_MANIFEST_VERSION, manifest_schema_json,
+    parse_manifest_str, render_credits, validate_manifest, validate_manifest_str,
+};
 pub use types::{
     Camera3dDef, CharacterDef, ColliderDef, ComponentsDef, EntityDef, LightDef, MaterialDef,
-    RigidBodyDef, SceneDoc, ShapeDef, TransformDef,
+    ModelDef, RigidBodyDef, SceneDoc, ShapeDef, TransformDef,
 };
 pub use validate::{SUPPORTED_VERSION, parse_hex_color, validate_doc};
 
@@ -58,6 +63,7 @@ pub fn parse_str(src: &str) -> Result<SceneDoc, Diagnostic> {
         let inner = err.into_inner();
         Diagnostic {
             kind: DiagKind::Parse,
+            severity: Severity::Error,
             location,
             line: Some(inner.line()).filter(|&l| l > 0),
             column: Some(inner.column()).filter(|&c| c > 0),
@@ -87,7 +93,7 @@ pub fn schema_json() -> serde_json::Value {
 
 /// serde_json appends " at line N column M" to messages; we carry position
 /// structurally instead, so drop the suffix rather than say it twice.
-fn strip_position_suffix(message: &str) -> String {
+pub(crate) fn strip_position_suffix(message: &str) -> String {
     match message.rfind(" at line ") {
         Some(idx) => message[..idx].to_owned(),
         None => message.to_owned(),

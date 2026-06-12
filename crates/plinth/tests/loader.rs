@@ -146,6 +146,28 @@ fn orbit_camera_follows_and_look_rotates_movement() {
 }
 
 #[test]
+fn model_component_spawns_a_gltf_scene_root() {
+    let path = std::env::temp_dir().join("plinth-model-test.scene.json");
+    std::fs::write(
+        &path,
+        r#"{ "version": 1, "entities": [
+            { "id": "knight", "components": {
+                "transform": { "position": [1, 0, 2] },
+                "model": { "path": "models/knight.glb" } } }
+        ] }"#,
+    )
+    .unwrap();
+    let mut game = Game::headless().level(&path);
+    game.update();
+
+    let world = game.bevy().world_mut();
+    let mut q = world.query::<(&SceneEntity, &SceneRoot, &Transform)>();
+    let (scene, _root, transform) = q.single(world).expect("knight spawned with a SceneRoot");
+    assert_eq!(scene.id, "knight");
+    assert_eq!(transform.translation, Vec3::new(1.0, 0.0, 2.0));
+}
+
+#[test]
 fn broken_scene_fails_loudly_with_diagnostics() {
     let path = std::env::temp_dir().join("plinth-broken-test.scene.json");
     std::fs::write(&path, r#"{ "version": 99, "entities": [] }"#).unwrap();

@@ -213,6 +213,30 @@ fn float_height_must_clear_the_capsule() {
 }
 
 #[test]
+fn model_component_validates_path_and_conflicts() {
+    let rendered = diags_for(
+        r#"{ "version": 1, "entities": [
+            { "id": "knight", "components": { "model": { "path": "models/knight.glb" } } },
+            { "id": "bad-ext", "components": { "model": { "path": "models/knight.fbx" } } },
+            { "id": "escape", "components": { "model": { "path": "../secrets.glb" } } },
+            { "id": "both", "components": {
+                "model": { "path": "models/knight.glb" },
+                "shape": { "sphere": { "radius": 1 } } } }
+        ] }"#,
+    );
+    assert_eq!(rendered.len(), 3, "{rendered:?}");
+    assert!(
+        rendered[0].contains("must be a .glb or .gltf"),
+        "{rendered:?}"
+    );
+    assert!(
+        rendered[1].contains("must not contain `..`"),
+        "{rendered:?}"
+    );
+    assert!(rendered[2].contains("mutually exclusive"), "{rendered:?}");
+}
+
+#[test]
 fn follow_camera_defaults_and_reference_resolve() {
     let (doc, diags) = validate_str(
         r#"{ "version": 1, "entities": [

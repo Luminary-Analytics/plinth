@@ -36,6 +36,7 @@ fn new_scaffolds_a_valid_project() {
         "README.md",
         "CLAUDE.md",
         ".mcp.json",
+        "assets/manifest.json",
         ".gitignore",
     ] {
         assert!(root.join(file).is_file(), "missing {file}");

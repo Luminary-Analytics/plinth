@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "AssetEntry": {
+      "additionalProperties": false,
+      "description": "One asset's provenance record.",
+      "properties": {
+        "author": {
+          "description": "Creator name for attribution. Required in practice by `CC-BY`\nlicenses.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "license": {
+          "description": "SPDX license identifier, e.g. `CC0-1.0`, `CC-BY-4.0`, `MIT`.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Path relative to the project's `assets/` directory, with forward\nslashes — the same path scene files reference.",
+          "type": "string"
+        },
+        "source": {
+          "description": "Where this asset came from (URL). Strongly recommended — provenance\nis the point.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "description": "Human-readable asset name for the credits file.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "license"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "`assets/manifest.json`: every external asset in the project, with its\nlicense and provenance. `plinth credits` renders this into CREDITS.md.",
+  "properties": {
+    "assets": {
+      "description": "Every tracked asset.",
+      "items": {
+        "$ref": "#/$defs/AssetEntry"
+      },
+      "type": "array"
+    },
+    "version": {
+      "description": "Manifest format version. This version of Plinth understands `1`.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "assets"
+  ],
+  "title": "AssetManifest",
+  "type": "object"
+}

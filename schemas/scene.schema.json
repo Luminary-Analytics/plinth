@@ -269,6 +269,17 @@
           ],
           "description": "Surface appearance for `shape`. Requires `shape` on the same entity."
         },
+        "model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "A glTF model file as this entity's visual. Mutually exclusive with\n`shape`; materials come from the file itself. Track the file in\n`assets/manifest.json`."
+        },
         "rigid_body": {
           "anyOf": [
             {
@@ -289,7 +300,7 @@
               "type": "null"
             }
           ],
-          "description": "A primitive 3D shape, rendered with this entity's `material` and\nusable for physics via `\"collider\": \"from_shape\"`."
+          "description": "A primitive 3D shape, rendered with this entity's `material` and\nusable for physics via `\"collider\": \"from_shape\"`. Mutually exclusive\nwith `model`."
         },
         "transform": {
           "anyOf": [
@@ -411,6 +422,27 @@
           "type": "number"
         }
       },
+      "type": "object"
+    },
+    "ModelDef": {
+      "additionalProperties": false,
+      "description": "A glTF model (`.glb` / `.gltf`) used as an entity's visual.",
+      "properties": {
+        "path": {
+          "description": "Path to the file, relative to the project's `assets/` directory,\nwith forward slashes. Example: `models/knight.glb`.",
+          "type": "string"
+        },
+        "scene": {
+          "default": 0,
+          "description": "Which scene inside the glTF to spawn.",
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path"
+      ],
       "type": "object"
     },
     "RigidBodyDef": {

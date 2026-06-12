@@ -22,11 +22,20 @@ impl fmt::Display for DiagKind {
     }
 }
 
+/// How serious a finding is. Errors fail validation; warnings inform
+/// (e.g. an unknown license string) without blocking.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Severity {
+    Error,
+    Warning,
+}
+
 /// One validation finding, locatable enough for an agent to fix it
 /// without guessing: a path into the document plus line/column when known.
 #[derive(Debug, Clone)]
 pub struct Diagnostic {
     pub kind: DiagKind,
+    pub severity: Severity,
     /// Path into the document, e.g. `entities[2].components.shape`.
     /// Empty when the error is document-wide.
     pub location: String,
@@ -41,17 +50,32 @@ impl Diagnostic {
     pub fn semantic(location: impl Into<String>, message: impl Into<String>) -> Self {
         Self {
             kind: DiagKind::Semantic,
+            severity: Severity::Error,
             location: location.into(),
             line: None,
             column: None,
             message: message.into(),
         }
     }
+
+    pub fn warning(location: impl Into<String>, message: impl Into<String>) -> Self {
+        Self {
+            severity: Severity::Warning,
+            ..Self::semantic(location, message)
+        }
+    }
+
+    pub fn is_error(&self) -> bool {
+        self.severity == Severity::Error
+    }
 }
 
 impl fmt::Display for Diagnostic {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "error[{}]", self.kind)?;
+        match self.severity {
+            Severity::Error => write!(f, "error[{}]", self.kind)?,
+            Severity::Warning => write!(f, "warning[{}]", self.kind)?,
+        }
         if !self.location.is_empty() {
             write!(f, " {}", self.location)?;
         }

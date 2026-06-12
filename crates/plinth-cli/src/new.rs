@@ -33,6 +33,10 @@ const TEMPLATE: &[TemplateFile] = &[
         content: "{\n  \"mcpServers\": {\n    \"plinth\": {\n      \"command\": \"plinth\",\n      \"args\": [\"mcp\"]\n    }\n  }\n}\n",
     },
     TemplateFile {
+        relative_path: "assets/manifest.json",
+        content: "{\n  \"version\": 1,\n  \"assets\": []\n}\n",
+    },
+    TemplateFile {
         relative_path: ".gitignore",
         content: "/target\n",
     },

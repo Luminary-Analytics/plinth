@@ -27,6 +27,17 @@ how to work here effectively.
   camera-relative), jumps (space), and has an orbit camera if a `camera3d`
   has `"follow": "<its id>"`. Don't rebuild these; configure them.
 
+## Assets
+
+- 3D models go in `assets/` and appear via the `model` scene component:
+  `"model": { "path": "models/knight.glb" }` (path relative to `assets/`).
+- **Every external asset must be tracked in `assets/manifest.json`** with
+  its SPDX license (`CC0-1.0`, `CC-BY-4.0`, `MIT`, …), source URL, and
+  author. `plinth validate` warns about untracked models and unknown
+  licenses; `plinth credits` regenerates `CREDITS.md` from the manifest.
+- Prefer CC0 sources (Kenney, PolyHaven, Quaternius). For CC-BY assets the
+  `author` field is required — attribution lands in CREDITS.md.
+
 ## Playtest the game yourself
 
 With the game running (`cargo run`), your MCP tools let you verify your own

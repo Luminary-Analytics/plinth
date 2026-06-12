@@ -53,9 +53,16 @@ pub struct ComponentsDef {
     pub transform: Option<TransformDef>,
 
     /// A primitive 3D shape, rendered with this entity's `material` and
-    /// usable for physics via `"collider": "from_shape"`.
+    /// usable for physics via `"collider": "from_shape"`. Mutually exclusive
+    /// with `model`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub shape: Option<ShapeDef>,
+
+    /// A glTF model file as this entity's visual. Mutually exclusive with
+    /// `shape`; materials come from the file itself. Track the file in
+    /// `assets/manifest.json`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<ModelDef>,
 
     /// Surface appearance for `shape`. Requires `shape` on the same entity.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -143,6 +150,19 @@ pub enum ShapeDef {
         /// Extents `[width, depth]` in meters. Both positive.
         size: [f32; 2],
     },
+}
+
+/// A glTF model (`.glb` / `.gltf`) used as an entity's visual.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(deny_unknown_fields)]
+pub struct ModelDef {
+    /// Path to the file, relative to the project's `assets/` directory,
+    /// with forward slashes. Example: `models/knight.glb`.
+    pub path: String,
+
+    /// Which scene inside the glTF to spawn.
+    #[serde(default)]
+    pub scene: u32,
 }
 
 /// Surface appearance for an entity's `shape` (physically-based).

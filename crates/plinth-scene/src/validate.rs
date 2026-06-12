@@ -92,6 +92,7 @@ fn validate_components(c: &ComponentsDef, base: &str, diags: &mut Vec<Diagnostic
 
     if c.transform.is_none()
         && c.shape.is_none()
+        && c.model.is_none()
         && c.material.is_none()
         && c.camera3d.is_none()
         && c.light.is_none()
@@ -101,6 +102,27 @@ fn validate_components(c: &ComponentsDef, base: &str, diags: &mut Vec<Diagnostic
     {
         push(diags, base, "", "entity has no components".to_owned());
         return;
+    }
+
+    if let Some(model) = &c.model {
+        if c.shape.is_some() {
+            push(
+                diags,
+                base,
+                ".model",
+                "`model` and `shape` are mutually exclusive; an entity has one visual".into(),
+            );
+        }
+        if let Some(problem) = crate::manifest::invalid_asset_path(&model.path) {
+            push(diags, base, ".model.path", problem);
+        } else if !(model.path.ends_with(".glb") || model.path.ends_with(".gltf")) {
+            push(
+                diags,
+                base,
+                ".model.path",
+                format!("`{}` must be a .glb or .gltf file", model.path),
+            );
+        }
     }
 
     if let Some(t) = &c.transform {

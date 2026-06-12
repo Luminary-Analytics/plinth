@@ -55,6 +55,7 @@ fn fingerprint(path: &PathBuf) -> Option<(SystemTime, u64)> {
 pub(crate) fn startup_load_scenes(
     mut commands: Commands,
     mut scenes: ResMut<LoadedScenes>,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut char_configs: ResMut<Assets<PlinthSchemeConfig>>,
@@ -82,6 +83,7 @@ pub(crate) fn startup_load_scenes(
             &mut commands,
             &doc,
             index,
+            &asset_server,
             &mut meshes,
             &mut materials,
             &mut char_configs,
@@ -97,6 +99,7 @@ pub(crate) fn watch_scenes(
     mut commands: Commands,
     mut scenes: ResMut<LoadedScenes>,
     spawned: Query<(Entity, &SceneIndex)>,
+    asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut char_configs: ResMut<Assets<PlinthSchemeConfig>>,
@@ -137,6 +140,7 @@ pub(crate) fn watch_scenes(
             &mut commands,
             &doc,
             index,
+            &asset_server,
             &mut meshes,
             &mut materials,
             &mut char_configs,
@@ -148,6 +152,7 @@ pub(crate) fn spawn_scene_doc(
     commands: &mut Commands,
     doc: &SceneDoc,
     index: usize,
+    asset_server: &AssetServer,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
     char_configs: &mut Assets<PlinthSchemeConfig>,
@@ -171,6 +176,14 @@ pub(crate) fn spawn_scene_doc(
                 Mesh3d(meshes.add(shape_mesh(shape))),
                 MeshMaterial3d(materials.add(to_material(c.material.as_ref()))),
             ));
+        }
+
+        if let Some(model) = &c.model {
+            let handle = asset_server.load(
+                bevy::gltf::GltfAssetLabel::Scene(model.scene as usize)
+                    .from_asset(model.path.clone()),
+            );
+            entity.insert(SceneRoot(handle));
         }
 
         if let Some(light) = &c.light {
