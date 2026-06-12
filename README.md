@@ -39,7 +39,7 @@ Then tell your agent: *"make the goblins flee when their health drops below 20%.
 
 ## Status
 
-**Pre-0.1 — quietly public.** The repository is open from day one, but nothing here is usable yet. The full design rationale and roadmap live in [DESIGN.md](DESIGN.md). The loud launch happens when the loop above is real.
+**Pre-0.1 — quietly public.** Working today: the schema-published scene format with `plinth validate` (millisecond feedback, no engine compile), and scene loading on the ratified stack — `Game::new("…").level("….scene.json")` spawns a playable world with physics, lights, camera, and a walking/jumping player character (`cargo run -p plinth --example arena`). Headless mode steps deterministically for tests and agents. The full design rationale and roadmap live in [DESIGN.md](DESIGN.md). The loud launch happens when the loop above is real.
 
 ## Contributing
 

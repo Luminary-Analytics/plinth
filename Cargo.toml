@@ -23,6 +23,12 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_path_to_error = "0.1"
 schemars = "1"
+# The ratified stack (see spikes/README.md): physics, character controller,
+# input. Pinned here so plinth and user games agree on versions.
+avian3d = "0.6.1"
+bevy-tnua = "0.31"
+bevy-tnua-avian3d = "0.11.1"
+leafwing-input-manager = "0.20"
 
 # Compile-time budgets are a Plinth feature: light optimization for our code,
 # full optimization for dependencies, so dev rebuilds stay fast and the game
