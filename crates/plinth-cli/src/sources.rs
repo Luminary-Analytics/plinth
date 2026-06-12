@@ -439,7 +439,7 @@ fn download_to(url: &str, target: &Path) -> Result<(), String> {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
     let response = agent().get(url).call().map_err(|e| e.to_string())?;
-    let mut reader = response.into_reader();
+    let reader = response.into_reader();
     let mut bytes = Vec::new();
     reader
         .take(512 * 1024 * 1024)
