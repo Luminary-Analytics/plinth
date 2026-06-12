@@ -28,10 +28,12 @@
 //!
 //! [Bevy]: https://bevyengine.org
 
+mod camera;
 mod character;
 mod loader;
 mod plugins;
 
+pub use camera::OrbitCamera;
 pub use character::{
     PlayerAction, PlayerControlled, PlinthScheme, PlinthSchemeConfig, default_input_map,
 };
@@ -46,7 +48,7 @@ pub use leafwing_input_manager;
 /// The Plinth golden-path API, plus Bevy's prelude as the supported escape
 /// hatch. Importing one prelude gives you both layers.
 pub mod prelude {
-    pub use crate::{Game, PlayerAction, PlayerControlled, SceneEntity};
+    pub use crate::{Game, OrbitCamera, PlayerAction, PlayerControlled, SceneEntity};
     pub use bevy::prelude::*;
 }
 

@@ -2,8 +2,21 @@
   "$defs": {
     "Camera3dDef": {
       "additionalProperties": false,
-      "description": "A 3D perspective camera.",
+      "description": "A 3D perspective camera. Static by default; set `follow` to turn it into\na third-person orbit camera.",
       "properties": {
+        "distance": {
+          "default": 8.0,
+          "description": "Orbit distance from the followed entity, in meters. Positive. Only\nmeaningful with `follow`.",
+          "format": "float",
+          "type": "number"
+        },
+        "follow": {
+          "description": "The scene id of an entity to orbit-follow (third-person camera). The\nplayer's look input (mouse / right stick) orbits around the target,\nand player movement becomes camera-relative. In follow mode the\ncamera's own `transform` is ignored — its position is computed every\nframe. Mutually exclusive with `look_at`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "fov_degrees": {
           "default": 45.0,
           "description": "Vertical field of view in degrees, exclusive range (0, 180).",
@@ -11,7 +24,7 @@
           "type": "number"
         },
         "look_at": {
-          "description": "World-space point the camera looks at. When omitted, the camera uses\nits transform's rotation as-is.",
+          "description": "World-space point the camera looks at. When omitted, the camera uses\nits transform's rotation as-is. Mutually exclusive with `follow`.",
           "items": {
             "format": "float",
             "type": "number"
@@ -22,6 +35,12 @@
             "array",
             "null"
           ]
+        },
+        "pitch_degrees": {
+          "default": 20.0,
+          "description": "Initial downward orbit angle in degrees, exclusive range (-89, 89).\nPositive looks down on the target. Only meaningful with `follow`.",
+          "format": "float",
+          "type": "number"
         }
       },
       "type": "object"

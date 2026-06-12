@@ -9,7 +9,7 @@ use bevy_tnua_avian3d::TnuaAvian3dPlugin;
 use leafwing_input_manager::prelude::InputManagerPlugin;
 
 use crate::character::{self, PlayerAction, PlinthScheme};
-use crate::loader;
+use crate::{camera, loader};
 
 /// Everything Plinth adds on top of Bevy, shared by windowed and headless
 /// games: physics, character control, input, and the scene loader.
@@ -29,5 +29,6 @@ impl Plugin for PlinthCorePlugin {
             FixedUpdate,
             character::player_controls.in_set(TnuaUserControlsSystems),
         );
+        app.add_systems(Update, camera::orbit_camera);
     }
 }

@@ -13,6 +13,7 @@ use plinth_scene::{
     ShapeDef, TransformDef, parse_hex_color,
 };
 
+use crate::camera::OrbitCamera;
 use crate::character::{self, PlayerControlled, PlinthSchemeConfig};
 
 /// Scene files queued by [`crate::Game::level`], loaded at startup.
@@ -69,6 +70,11 @@ pub(crate) fn spawn_scene_doc(
     materials: &mut Assets<StandardMaterial>,
     char_configs: &mut Assets<PlinthSchemeConfig>,
 ) {
+    // Pass 1 spawns everything; pass 2 resolves cross-entity references
+    // (camera follow targets) once every id has an Entity.
+    let mut by_id: std::collections::HashMap<&str, Entity> = std::collections::HashMap::new();
+    let mut follow_cameras: Vec<(Entity, &Camera3dDef)> = Vec::new();
+
     for def in &doc.entities {
         let c = &def.components;
         let mut entity = commands.spawn((
@@ -145,6 +151,25 @@ pub(crate) fn spawn_scene_doc(
                 ));
             }
         }
+
+        let entity_id = entity.id();
+        by_id.insert(def.id.as_str(), entity_id);
+        if let Some(cam) = &c.camera3d
+            && cam.follow.is_some()
+        {
+            follow_cameras.push((entity_id, cam));
+        }
+    }
+
+    for (camera_entity, cam) in follow_cameras {
+        let target_id = cam.follow.as_deref().expect("queued only with follow");
+        let target = by_id[target_id]; // reference validated before load
+        commands.entity(camera_entity).insert(OrbitCamera {
+            target,
+            distance: cam.distance,
+            yaw: 0.0,
+            pitch: cam.pitch_degrees.to_radians(),
+        });
     }
 }
 

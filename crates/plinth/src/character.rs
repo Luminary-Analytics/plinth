@@ -19,9 +19,13 @@ pub enum PlinthScheme {
 /// leafwing's `InputMap`; Plinth installs [`default_input_map`] out of the box.
 #[derive(Actionlike, PartialEq, Eq, Hash, Clone, Copy, Debug, Reflect)]
 pub enum PlayerAction {
-    /// Planar movement. X is right, Y is forward.
+    /// Planar movement. X is right, Y is forward (camera-relative when an
+    /// orbit camera is active, world-relative otherwise).
     #[actionlike(DualAxis)]
     Move,
+    /// Camera look: orbits the follow camera around its target.
+    #[actionlike(DualAxis)]
+    Look,
     Jump,
 }
 
@@ -29,11 +33,13 @@ pub enum PlayerAction {
 #[derive(Component, Debug, Default)]
 pub struct PlayerControlled;
 
-/// WASD + space, left gamepad stick + south button.
+/// WASD + mouse + space; left stick + right stick + south button.
 pub fn default_input_map() -> InputMap<PlayerAction> {
     InputMap::default()
         .with_dual_axis(PlayerAction::Move, VirtualDPad::wasd())
         .with_dual_axis(PlayerAction::Move, GamepadStick::LEFT)
+        .with_dual_axis(PlayerAction::Look, MouseMove::default())
+        .with_dual_axis(PlayerAction::Look, GamepadStick::RIGHT)
         .with(PlayerAction::Jump, KeyCode::Space)
         .with(PlayerAction::Jump, GamepadButton::South)
 }
@@ -77,13 +83,20 @@ pub(crate) fn player_controls(
         ),
         With<PlayerControlled>,
     >,
+    cameras: Query<&crate::camera::OrbitCamera>,
 ) {
+    // With an orbit camera active, "forward" means away from the camera.
+    let camera_yaw = cameras.iter().next().map(|orbit| orbit.yaw);
+
     for (actions, mut controller) in &mut query {
         controller.initiate_action_feeding();
 
         let axis = actions.axis_pair(&PlayerAction::Move);
         // Input Y is "forward"; world forward is -Z.
         let mut motion = Vec3::new(axis.x, 0.0, -axis.y);
+        if let Some(yaw) = camera_yaw {
+            motion = Quat::from_rotation_y(yaw) * motion;
+        }
         if motion.length_squared() > 1.0 {
             motion = motion.normalize();
         }

@@ -170,18 +170,45 @@ fn default_roughness() -> f32 {
     0.5
 }
 
-/// A 3D perspective camera.
+/// A 3D perspective camera. Static by default; set `follow` to turn it into
+/// a third-person orbit camera.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Camera3dDef {
     /// World-space point the camera looks at. When omitted, the camera uses
-    /// its transform's rotation as-is.
+    /// its transform's rotation as-is. Mutually exclusive with `follow`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub look_at: Option<[f32; 3]>,
+
+    /// The scene id of an entity to orbit-follow (third-person camera). The
+    /// player's look input (mouse / right stick) orbits around the target,
+    /// and player movement becomes camera-relative. In follow mode the
+    /// camera's own `transform` is ignored — its position is computed every
+    /// frame. Mutually exclusive with `look_at`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub follow: Option<String>,
+
+    /// Orbit distance from the followed entity, in meters. Positive. Only
+    /// meaningful with `follow`.
+    #[serde(default = "default_distance")]
+    pub distance: f32,
+
+    /// Initial downward orbit angle in degrees, exclusive range (-89, 89).
+    /// Positive looks down on the target. Only meaningful with `follow`.
+    #[serde(default = "default_pitch")]
+    pub pitch_degrees: f32,
 
     /// Vertical field of view in degrees, exclusive range (0, 180).
     #[serde(default = "default_fov")]
     pub fov_degrees: f32,
+}
+
+fn default_distance() -> f32 {
+    8.0
+}
+
+fn default_pitch() -> f32 {
+    20.0
 }
 
 fn default_fov() -> f32 {

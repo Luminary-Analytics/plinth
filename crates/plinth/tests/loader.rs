@@ -97,6 +97,55 @@ fn injected_input_walks_the_player_forward() {
 }
 
 #[test]
+fn orbit_camera_follows_and_look_rotates_movement() {
+    let mut game = arena_game();
+    for _ in 0..90 {
+        game.update();
+    }
+
+    // The follow camera holds its configured distance, behind the player
+    // (+Z side at yaw 0).
+    let player = scene_pos(&mut game, "player");
+    let camera = scene_pos(&mut game, "camera");
+    let distance = camera.distance(player);
+    assert!(
+        (distance - 9.0).abs() < 0.2,
+        "camera should orbit at distance 9, got {distance}"
+    );
+    assert!(
+        camera.z > player.z + 4.0,
+        "camera should start behind the player: camera {camera}, player {player}"
+    );
+
+    // Inject mouse look to orbit ~180 degrees, the same way the playtest
+    // MCP will: device-level MouseMotion messages.
+    let per_frame = std::f32::consts::PI / 0.004 / 30.0;
+    for _ in 0..30 {
+        game.bevy()
+            .world_mut()
+            .write_message(bevy::input::mouse::MouseMotion {
+                delta: Vec2::new(per_frame, 0.0),
+            });
+        game.update();
+    }
+
+    // Forward is camera-relative now, so W must walk the player toward +Z.
+    let start = scene_pos(&mut game, "player");
+    game.bevy()
+        .world_mut()
+        .resource_mut::<ButtonInput<KeyCode>>()
+        .press(KeyCode::KeyW);
+    for _ in 0..120 {
+        game.update();
+    }
+    let end = scene_pos(&mut game, "player");
+    assert!(
+        end.z - start.z > 3.0,
+        "after a 180-degree orbit, W should walk +Z: start {start}, end {end}"
+    );
+}
+
+#[test]
 fn broken_scene_fails_loudly_with_diagnostics() {
     let path = std::env::temp_dir().join("plinth-broken-test.scene.json");
     std::fs::write(&path, r#"{ "version": 99, "entities": [] }"#).unwrap();

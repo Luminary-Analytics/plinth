@@ -213,6 +213,66 @@ fn float_height_must_clear_the_capsule() {
 }
 
 #[test]
+fn follow_camera_defaults_and_reference_resolve() {
+    let (doc, diags) = validate_str(
+        r#"{ "version": 1, "entities": [
+            { "id": "hero", "components": { "character": { "player": true } } },
+            { "id": "cam", "components": { "camera3d": { "follow": "hero" } } }
+        ] }"#,
+    );
+    assert!(diags.is_empty(), "unexpected diagnostics: {diags:?}");
+    let doc = doc.unwrap();
+    let cam = doc.entities[1].components.camera3d.as_ref().unwrap();
+    assert_eq!(cam.follow.as_deref(), Some("hero"));
+    assert_eq!(cam.distance, 8.0);
+    assert_eq!(cam.pitch_degrees, 20.0);
+}
+
+#[test]
+fn follow_and_look_at_are_mutually_exclusive() {
+    let rendered = diags_for(
+        r#"{ "version": 1, "entities": [
+            { "id": "hero", "components": { "character": {} } },
+            { "id": "cam", "components": { "camera3d": { "follow": "hero", "look_at": [0, 0, 0] } } }
+        ] }"#,
+    );
+    assert_eq!(rendered.len(), 1, "{rendered:?}");
+    assert!(rendered[0].contains("mutually exclusive"), "{rendered:?}");
+}
+
+#[test]
+fn dangling_follow_reference_is_rejected() {
+    let rendered = diags_for(
+        r#"{ "version": 1, "entities": [
+            { "id": "cam", "components": { "camera3d": { "follow": "heroo" } } }
+        ] }"#,
+    );
+    assert_eq!(rendered.len(), 1, "{rendered:?}");
+    assert!(
+        rendered[0].contains("entities[0].components.camera3d.follow"),
+        "{rendered:?}"
+    );
+    assert!(
+        rendered[0].contains("no entity in this scene has that id"),
+        "{rendered:?}"
+    );
+}
+
+#[test]
+fn camera_cannot_follow_itself() {
+    let rendered = diags_for(
+        r#"{ "version": 1, "entities": [
+            { "id": "cam", "components": { "camera3d": { "follow": "cam" } } }
+        ] }"#,
+    );
+    assert_eq!(rendered.len(), 1, "{rendered:?}");
+    assert!(
+        rendered[0].contains("follow its own entity"),
+        "{rendered:?}"
+    );
+}
+
+#[test]
 fn example_scenes_are_valid() {
     let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../../examples/scenes");
     let mut checked = 0;

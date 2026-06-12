@@ -49,6 +49,28 @@ pub fn validate_doc(doc: &SceneDoc) -> Vec<Diagnostic> {
         validate_components(&entity.components, &at(".components"), &mut diags);
     }
 
+    // Cross-entity references, checked once every id is known.
+    for (i, entity) in doc.entities.iter().enumerate() {
+        if let Some(cam) = &entity.components.camera3d
+            && let Some(target) = &cam.follow
+        {
+            let location = format!("entities[{i}].components.camera3d.follow");
+            if target == &entity.id {
+                diags.push(Diagnostic::semantic(
+                    location,
+                    format!("camera cannot follow its own entity `{target}`"),
+                ));
+            } else if !doc.entities.iter().any(|e| &e.id == target) {
+                diags.push(Diagnostic::semantic(
+                    location,
+                    format!(
+                        "follow references `{target}`, but no entity in this scene has that id"
+                    ),
+                ));
+            }
+        }
+    }
+
     diags
 }
 
@@ -127,18 +149,45 @@ fn validate_components(c: &ComponentsDef, base: &str, diags: &mut Vec<Diagnostic
         }
     }
 
-    if let Some(cam) = &c.camera3d
-        && !(cam.fov_degrees > 0.0 && cam.fov_degrees < 180.0)
-    {
-        push(
-            diags,
-            base,
-            ".camera3d.fov_degrees",
-            format!(
-                "fov_degrees must be within (0, 180), got {}",
-                cam.fov_degrees
-            ),
-        );
+    if let Some(cam) = &c.camera3d {
+        if !(cam.fov_degrees > 0.0 && cam.fov_degrees < 180.0) {
+            push(
+                diags,
+                base,
+                ".camera3d.fov_degrees",
+                format!(
+                    "fov_degrees must be within (0, 180), got {}",
+                    cam.fov_degrees
+                ),
+            );
+        }
+        if cam.follow.is_some() && cam.look_at.is_some() {
+            push(
+                diags,
+                base,
+                ".camera3d",
+                "`follow` and `look_at` are mutually exclusive; a follow camera computes its own view".into(),
+            );
+        }
+        if cam.distance <= 0.0 {
+            push(
+                diags,
+                base,
+                ".camera3d.distance",
+                format!("distance must be positive, got {}", cam.distance),
+            );
+        }
+        if !(cam.pitch_degrees > -89.0 && cam.pitch_degrees < 89.0) {
+            push(
+                diags,
+                base,
+                ".camera3d.pitch_degrees",
+                format!(
+                    "pitch_degrees must be within (-89, 89), got {}",
+                    cam.pitch_degrees
+                ),
+            );
+        }
     }
 
     if let Some(light) = &c.light {

@@ -43,8 +43,7 @@
     {
       "id": "camera",
       "components": {
-        "transform": { "position": [-8, 6, 12] },
-        "camera3d": { "look_at": [0, 1, 0] }
+        "camera3d": { "follow": "player", "distance": 9, "pitch_degrees": 18 }
       }
     },
     {
