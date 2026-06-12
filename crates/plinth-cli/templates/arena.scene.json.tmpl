@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "name": "arena",
+  "entities": [
+    {
+      "id": "ground",
+      "components": {
+        "transform": { "position": [0, -0.5, 0] },
+        "shape": { "cuboid": { "size": [40, 1, 40] } },
+        "material": { "color": "#8a8f98" },
+        "rigid_body": "static",
+        "collider": "from_shape"
+      }
+    },
+    {
+      "id": "pillar",
+      "components": {
+        "transform": { "position": [6, 1.5, -4] },
+        "shape": { "cylinder": { "radius": 0.6, "height": 3 } },
+        "material": { "color": "#6b4f3a", "roughness": 0.9 },
+        "rigid_body": "static",
+        "collider": "from_shape"
+      }
+    },
+    {
+      "id": "crate-1",
+      "components": {
+        "transform": { "position": [-3, 1, 2] },
+        "shape": { "cuboid": { "size": [1, 1, 1] } },
+        "material": { "color": "#b08968" },
+        "rigid_body": "dynamic",
+        "collider": "from_shape"
+      }
+    },
+    {
+      "id": "player",
+      "components": {
+        "transform": { "position": [0, 2, 6] },
+        "character": { "player": true, "speed": 6, "jump_height": 1.6 }
+      }
+    },
+    {
+      "id": "camera",
+      "components": {
+        "camera3d": { "follow": "player", "distance": 9, "pitch_degrees": 18 }
+      }
+    },
+    {
+      "id": "sun",
+      "components": {
+        "transform": { "rotation_degrees": [-45, 30, 0] },
+        "light": { "directional": { "illuminance": 10000 } }
+      }
+    }
+  ]
+}

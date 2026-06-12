@@ -1,3 +1,5 @@
+mod new;
+
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -45,10 +47,19 @@ fn main() -> ExitCode {
             );
             ExitCode::SUCCESS
         }
-        Command::New { name } => {
-            eprintln!("`plinth new {name}` lands later in M1 (scaffolding + first template).");
-            ExitCode::FAILURE
-        }
+        Command::New { name } => match new::create_project(&name) {
+            Ok(root) => {
+                println!(
+                    "Created `{name}`.\n\n  cd {}\n  cargo run\n\nWASD + mouse + space. Edit scenes/*.scene.json while it runs — they hot-reload.\nValidate content anytime with `plinth validate`.",
+                    root.display()
+                );
+                ExitCode::SUCCESS
+            }
+            Err(err) => {
+                eprintln!("error: {err}");
+                ExitCode::from(2)
+            }
+        },
     }
 }
 

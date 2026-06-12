@@ -1,0 +1,9 @@
+use plinth::prelude::*;
+
+fn main() {
+    Game::new("{{name}}")
+        // Scenes are data: edit this file while the game runs and it
+        // hot-reloads. Check it anytime with `plinth validate`.
+        .level("scenes/arena.scene.json")
+        .run();
+}

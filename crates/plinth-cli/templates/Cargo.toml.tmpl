@@ -1,0 +1,17 @@
+[package]
+name = "{{name}}"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Plinth pins Bevy and the physics/character/input stack for you.
+# When Plinth 0.1 ships on crates.io, switch to: plinth = "0.1"
+plinth = { git = "https://github.com/Luminary-Analytics/plinth" }
+
+# Keep dev rebuilds fast and the game playable: light optimization for your
+# code, full optimization for dependencies.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3

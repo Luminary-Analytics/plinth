@@ -114,13 +114,18 @@ impl Game {
     /// multiple times; scenes spawn in order.
     ///
     /// Invalid scenes fail loudly at startup with the same diagnostics
-    /// `plinth validate` prints.
+    /// `plinth validate` prints. After startup the file is watched: saving a
+    /// valid edit respawns that scene's entities live, while an invalid edit
+    /// logs its diagnostics and leaves the running world untouched.
     pub fn level(mut self, path: impl Into<PathBuf>) -> Self {
         self.app
             .world_mut()
-            .resource_mut::<loader::PendingScenes>()
+            .resource_mut::<loader::LoadedScenes>()
             .0
-            .push(path.into());
+            .push(loader::SceneRecord {
+                path: path.into(),
+                fingerprint: None,
+            });
         self
     }
 

@@ -1,0 +1,24 @@
+# {{name}}
+
+A game built on [Plinth](https://github.com/Luminary-Analytics/plinth) — the
+stable base your game stands on.
+
+## Run
+
+```sh
+cargo run
+```
+
+WASD to move, mouse to orbit the camera, space to jump.
+
+## Edit
+
+- Gameplay code lives in `src/` (Rust). The full Bevy ECS is available as a
+  documented escape hatch.
+- Levels and content live in `scenes/*.scene.json`. Edit them **while the
+  game runs** — valid saves hot-reload in place, invalid saves log exactly
+  what's wrong and leave the game running.
+- Validate content without compiling anything: `plinth validate`.
+
+The scene schema (great context for your coding agent) is published at
+<https://github.com/Luminary-Analytics/plinth/blob/main/schemas/scene.schema.json>.

@@ -23,12 +23,12 @@ impl Plugin for PlinthCorePlugin {
             TnuaAvian3dPlugin::new(FixedUpdate),
             InputManagerPlugin::<PlayerAction>::default(),
         ));
-        app.init_resource::<loader::PendingScenes>();
-        app.add_systems(Startup, loader::load_pending_scenes);
+        app.init_resource::<loader::LoadedScenes>();
+        app.add_systems(Startup, loader::startup_load_scenes);
         app.add_systems(
             FixedUpdate,
             character::player_controls.in_set(TnuaUserControlsSystems),
         );
-        app.add_systems(Update, camera::orbit_camera);
+        app.add_systems(Update, (loader::watch_scenes, camera::orbit_camera));
     }
 }

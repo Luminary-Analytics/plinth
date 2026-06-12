@@ -5,6 +5,7 @@
 //! component *means* at runtime.
 
 use std::path::PathBuf;
+use std::time::SystemTime;
 
 use avian3d::prelude::{Collider, RigidBody};
 use bevy::prelude::*;
@@ -16,9 +17,17 @@ use plinth_scene::{
 use crate::camera::OrbitCamera;
 use crate::character::{self, PlayerControlled, PlinthSchemeConfig};
 
-/// Scene files queued by [`crate::Game::level`], loaded at startup.
+/// One scene file registered via [`crate::Game::level`], plus the on-disk
+/// fingerprint it was last spawned from (None before the first load).
+pub(crate) struct SceneRecord {
+    pub path: PathBuf,
+    pub fingerprint: Option<(SystemTime, u64)>,
+}
+
+/// Every scene file this game runs. Index order is spawn order, and each
+/// spawned entity is tagged with its record's index for hot-reload.
 #[derive(Resource, Default)]
-pub(crate) struct PendingScenes(pub Vec<PathBuf>);
+pub(crate) struct LoadedScenes(pub Vec<SceneRecord>);
 
 /// Attached to every entity spawned from a scene file, carrying its stable
 /// scene id. The id is also mirrored into [`Name`] for inspectors.
@@ -27,35 +36,107 @@ pub struct SceneEntity {
     pub id: String,
 }
 
+/// Which [`LoadedScenes`] record an entity came from; hot-reload despawns
+/// and respawns by this tag.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct SceneIndex(pub usize);
+
 /// Thickness given to colliders generated from a `plane` shape, which has no
 /// volume of its own.
 const PLANE_COLLIDER_THICKNESS: f32 = 0.1;
 
-pub(crate) fn load_pending_scenes(
+fn fingerprint(path: &PathBuf) -> Option<(SystemTime, u64)> {
+    let meta = std::fs::metadata(path).ok()?;
+    Some((meta.modified().ok()?, meta.len()))
+}
+
+/// Startup loading is synchronous and fail-fast: a broken scene stops the
+/// game with the same diagnostics `plinth validate` prints.
+pub(crate) fn startup_load_scenes(
     mut commands: Commands,
-    pending: Res<PendingScenes>,
+    mut scenes: ResMut<LoadedScenes>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut char_configs: ResMut<Assets<PlinthSchemeConfig>>,
 ) {
-    for path in &pending.0 {
-        let src = match std::fs::read_to_string(path) {
+    for (index, record) in scenes.0.iter_mut().enumerate() {
+        let src = match std::fs::read_to_string(&record.path) {
             Ok(src) => src,
-            Err(err) => panic!("plinth: cannot read scene file {}: {err}", path.display()),
+            Err(err) => panic!(
+                "plinth: cannot read scene file {}: {err}",
+                record.path.display()
+            ),
         };
         let (doc, diags) = plinth_scene::validate_str(&src);
         if !diags.is_empty() {
             let rendered: Vec<String> = diags.iter().map(|d| format!("  {d}")).collect();
             panic!(
                 "plinth: scene {} failed validation:\n{}\n(fix the file or run `plinth validate` for details)",
-                path.display(),
+                record.path.display(),
                 rendered.join("\n")
             );
         }
         let doc = doc.expect("no diagnostics implies a parsed document");
+        record.fingerprint = fingerprint(&record.path);
         spawn_scene_doc(
             &mut commands,
             &doc,
+            index,
+            &mut meshes,
+            &mut materials,
+            &mut char_configs,
+        );
+    }
+}
+
+/// Hot-reload: when a scene file's fingerprint changes, despawn what it
+/// spawned and respawn from the new content. An invalid edit logs the
+/// diagnostics and leaves the running world untouched — fix the file and it
+/// reloads on the next change.
+pub(crate) fn watch_scenes(
+    mut commands: Commands,
+    mut scenes: ResMut<LoadedScenes>,
+    spawned: Query<(Entity, &SceneIndex)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut char_configs: ResMut<Assets<PlinthSchemeConfig>>,
+) {
+    for (index, record) in scenes.0.iter_mut().enumerate() {
+        // A vanished file is usually an editor mid-save (remove + rename);
+        // wait for it to come back.
+        let Some(current) = fingerprint(&record.path) else {
+            continue;
+        };
+        if record.fingerprint == Some(current) {
+            continue;
+        }
+        record.fingerprint = Some(current);
+
+        let Ok(src) = std::fs::read_to_string(&record.path) else {
+            continue;
+        };
+        let (doc, diags) = plinth_scene::validate_str(&src);
+        if !diags.is_empty() {
+            let rendered: Vec<String> = diags.iter().map(|d| format!("  {d}")).collect();
+            error!(
+                "plinth: scene {} changed but failed validation — keeping the previous world:\n{}",
+                record.path.display(),
+                rendered.join("\n")
+            );
+            continue;
+        }
+        let doc = doc.expect("no diagnostics implies a parsed document");
+
+        for (entity, scene_index) in &spawned {
+            if scene_index.0 == index {
+                commands.entity(entity).despawn();
+            }
+        }
+        info!("plinth: reloaded scene {}", record.path.display());
+        spawn_scene_doc(
+            &mut commands,
+            &doc,
+            index,
             &mut meshes,
             &mut materials,
             &mut char_configs,
@@ -66,6 +147,7 @@ pub(crate) fn load_pending_scenes(
 pub(crate) fn spawn_scene_doc(
     commands: &mut Commands,
     doc: &SceneDoc,
+    index: usize,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
     char_configs: &mut Assets<PlinthSchemeConfig>,
@@ -79,6 +161,7 @@ pub(crate) fn spawn_scene_doc(
         let c = &def.components;
         let mut entity = commands.spawn((
             SceneEntity { id: def.id.clone() },
+            SceneIndex(index),
             Name::new(def.id.clone()),
             to_transform(c),
         ));
