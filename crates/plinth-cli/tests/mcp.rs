@@ -134,6 +134,8 @@ fn agent_loop_end_to_end() {
         "game_time",
         "screenshot",
         "query",
+        "search_assets",
+        "add_asset",
     ] {
         assert!(
             names.contains(&expected),

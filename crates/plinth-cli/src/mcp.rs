@@ -119,6 +119,32 @@ fn tool_definitions() -> Value {
                 "required": ["method"],
                 "additionalProperties": false
             }
+        },
+        {
+            "name": "search_assets",
+            "description": "Search open-licensed 3D model libraries (PolyHaven: CC0 photoreal props; Poly Pizza: CC0/CC-BY low-poly game models, characters, weapons). Works without the game running. Returns source-qualified ids for add_asset.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string", "description": "What to look for, e.g. \"barrel\", \"knight\"" },
+                    "limit": { "type": "integer", "minimum": 1, "maximum": 50, "description": "Max results (default 20)" }
+                },
+                "required": ["query"],
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": "add_asset",
+            "description": "Download a searched asset into assets/, record its license and provenance in assets/manifest.json, and regenerate CREDITS.md. Returns the model path and a ready-to-paste scene component — paste it into a *.scene.json and the running game hot-reloads it.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "source": { "type": "string", "enum": ["polyhaven", "polypizza"], "description": "Source from search results" },
+                    "id": { "type": "string", "description": "Asset id from search results" }
+                },
+                "required": ["source", "id"],
+                "additionalProperties": false
+            }
         }
     ])
 }
@@ -140,11 +166,42 @@ fn handle_tool_call(game_url: &str, params: &Value) -> Value {
             let params = args.get("params").cloned().unwrap_or_else(|| json!({}));
             brp(game_url, &method, params).map(text_content)
         }
+        "search_assets" => {
+            let query = args["query"].as_str().unwrap_or_default();
+            let limit = args["limit"].as_u64().unwrap_or(20) as usize;
+            let (hits, notes) = crate::sources::search_all(query, limit);
+            let hits: Vec<Value> = hits.iter().map(crate::sources::AssetHit::to_json).collect();
+            Ok(text_content(json!({
+                "hits": hits,
+                "notes": notes,
+                "next": "fetch one with the add_asset tool",
+            })))
+        }
+        "add_asset" => {
+            let source = args["source"].as_str().unwrap_or_default();
+            let id = args["id"].as_str().unwrap_or_default();
+            crate::sources::add_asset(source, id, std::path::Path::new(".")).map(|outcome| {
+                text_content(json!({
+                    "path": outcome.asset_path,
+                    "license": outcome.license,
+                    "files_downloaded": outcome.files_downloaded,
+                    "manifest": "assets/manifest.json updated; CREDITS.md regenerated",
+                    "scene_snippet": outcome.scene_snippet,
+                }))
+            })
+        }
         other => Err(format!("unknown tool `{other}`")),
     };
 
+    // Game-facing tools fail when the game isn't running; asset tools fail on
+    // network/key problems. Both come back as agent-actionable text.
+    let hint = matches!(name, "search_assets" | "add_asset");
     match outcome {
         Ok(content) => json!({ "content": [content] }),
+        Err(message) if hint => json!({
+            "content": [{ "type": "text", "text": message }],
+            "isError": true,
+        }),
         Err(message) => json!({
             "content": [{ "type": "text", "text": format!(
                 "{message}\n\nIs the game running? Start it with `cargo run` (debug builds serve the playtest API on port 15702)."

@@ -1,5 +1,6 @@
 mod mcp;
 mod new;
+mod sources;
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -36,6 +37,12 @@ enum Command {
         #[arg(value_enum, default_value_t = SchemaKind::Scene)]
         kind: SchemaKind,
     },
+    /// Search and fetch open-licensed assets (PolyHaven, Poly Pizza) into
+    /// assets/, tracking license + provenance in the manifest
+    Assets {
+        #[command(subcommand)]
+        command: AssetsCommand,
+    },
     /// Generate CREDITS.md from the asset manifest's license/provenance data
     Credits {
         /// Path to the asset manifest
@@ -65,6 +72,26 @@ enum SchemaKind {
     Manifest,
 }
 
+#[derive(Subcommand)]
+enum AssetsCommand {
+    /// Search CC0/CC-BY libraries for models
+    Search {
+        /// What to look for, e.g. "barrel", "knight"
+        query: String,
+        /// Maximum number of results
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+    },
+    /// Download an asset into assets/, record it in the manifest, and
+    /// regenerate CREDITS.md
+    Add {
+        /// Source name from search results: polyhaven or polypizza
+        source: String,
+        /// Asset id from search results
+        id: String,
+    },
+}
+
 fn main() -> ExitCode {
     match Cli::parse().command {
         Command::Validate { paths, json } => validate(paths, json),
@@ -79,6 +106,7 @@ fn main() -> ExitCode {
             );
             ExitCode::SUCCESS
         }
+        Command::Assets { command } => assets(command),
         Command::Credits { manifest, out } => credits(&manifest, &out),
         Command::Mcp { game } => mcp::serve(game),
         Command::New { name } => match new::create_project(&name) {
@@ -94,6 +122,54 @@ fn main() -> ExitCode {
                 ExitCode::from(2)
             }
         },
+    }
+}
+
+fn assets(command: AssetsCommand) -> ExitCode {
+    match command {
+        AssetsCommand::Search { query, limit } => {
+            let (hits, notes) = sources::search_all(&query, limit);
+            for hit in &hits {
+                let tris = hit
+                    .polycount
+                    .map(|n| format!(", {n} tris"))
+                    .unwrap_or_default();
+                println!(
+                    "{}:{} — {} by {} ({}{tris})",
+                    hit.source, hit.id, hit.title, hit.author, hit.license
+                );
+            }
+            for note in &notes {
+                eprintln!("note: {note}");
+            }
+            if hits.is_empty() {
+                println!("no results for `{query}`");
+            } else {
+                println!(
+                    "\n{} result(s). Fetch one with: plinth assets add <source> <id>",
+                    hits.len()
+                );
+            }
+            ExitCode::SUCCESS
+        }
+        AssetsCommand::Add { source, id } => {
+            match sources::add_asset(&source, &id, Path::new(".")) {
+                Ok(outcome) => {
+                    println!(
+                        "Added assets/{} ({}, {} file(s)). Manifest and CREDITS.md updated.\nUse it in a scene with:\n  {}",
+                        outcome.asset_path,
+                        outcome.license,
+                        outcome.files_downloaded,
+                        outcome.scene_snippet
+                    );
+                    ExitCode::SUCCESS
+                }
+                Err(err) => {
+                    eprintln!("error: {err}");
+                    ExitCode::FAILURE
+                }
+            }
+        }
     }
 }
 

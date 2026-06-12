@@ -37,6 +37,12 @@ how to work here effectively.
   licenses; `plinth credits` regenerates `CREDITS.md` from the manifest.
 - Prefer CC0 sources (Kenney, PolyHaven, Quaternius). For CC-BY assets the
   `author` field is required — attribution lands in CREDITS.md.
+- **You can find and fetch assets yourself**: the `search_assets` MCP tool
+  searches PolyHaven (CC0 props) and Poly Pizza (CC0/CC-BY game models —
+  needs the free `PLINTH_POLYPIZZA_KEY`); `add_asset` downloads into
+  `assets/`, updates the manifest + CREDITS.md, and hands you the scene
+  snippet to paste. With the game running, the new model hot-reloads in.
+  (CLI twins: `plinth assets search/add`.)
 
 ## Playtest the game yourself
 
