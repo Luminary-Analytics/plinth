@@ -79,9 +79,9 @@ Explicit non-promises for v1: Rust code hot-reload (may exist behind an experime
 
 | Area | Default | Notes |
 |------|---------|-------|
-| Physics | `avian` vs `rapier` | 1-week spike; pick whichever survives the character-controller test best |
-| Character controller | `bevy_tnua` candidate | Depends on physics pick |
-| Input | `leafwing-input-manager` | Replayable abstraction fits the playtest loop and netcode-readiness |
+| Physics | **`avian3d` (ratified 2026-06-11)** | Spike: character-controller behavior tied with rapier; avian wins on ECS-native LLM-legible API. See [spikes/README.md](spikes/README.md) |
+| Character controller | **`bevy-tnua` (ratified 2026-06-11)** | Passed the spike on both backends; backend-portable if a game outgrows avian |
+| Input | **`leafwing-input-manager` (ratified 2026-06-11)** | Headless device-level injection proven (`ButtonInput` mutation → full pipeline) |
 | UI | `bevy_ui` golden path; `bevy_egui` escape hatch | ARPG needs inventory/HUD early |
 | Audio | `bevy_audio` default; evaluate `kira` | |
 | Navigation/AI | navmesh crate spike (`oxidized_navigation` / `vleue_navigator`) | Needed for enemy AI in flagship |

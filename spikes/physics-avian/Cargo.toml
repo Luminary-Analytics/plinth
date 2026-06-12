@@ -1,0 +1,14 @@
+[package]
+name = "plinth-spike-avian"
+description = "M0 spike: tnua character controller on avian3d, headless and deterministic."
+publish = false
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bevy = { workspace = true }
+avian3d = "0.6.1"
+bevy-tnua = "0.31"
+bevy-tnua-avian3d = "0.11.1"
+leafwing-input-manager = { version = "0.20", default-features = false, features = ["keyboard"] }

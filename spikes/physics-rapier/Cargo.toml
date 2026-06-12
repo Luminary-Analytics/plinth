@@ -1,0 +1,13 @@
+[package]
+name = "plinth-spike-rapier"
+description = "M0 spike: tnua character controller on bevy_rapier3d, headless and deterministic."
+publish = false
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+bevy = { workspace = true }
+bevy_rapier3d = "0.33"
+bevy-tnua = "0.31"
+bevy-tnua-rapier3d = "0.16"

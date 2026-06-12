@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/plinth", "crates/plinth-cli"]
+members = ["crates/plinth", "crates/plinth-cli", "spikes/physics-avian", "spikes/physics-rapier"]
 
 [workspace.package]
 version = "0.0.1"
