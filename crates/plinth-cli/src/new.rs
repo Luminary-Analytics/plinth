@@ -25,6 +25,14 @@ const TEMPLATE: &[TemplateFile] = &[
         content: include_str!("../templates/README.md.tmpl"),
     },
     TemplateFile {
+        relative_path: "CLAUDE.md",
+        content: include_str!("../templates/CLAUDE.md.tmpl"),
+    },
+    TemplateFile {
+        relative_path: ".mcp.json",
+        content: "{\n  \"mcpServers\": {\n    \"plinth\": {\n      \"command\": \"plinth\",\n      \"args\": [\"mcp\"]\n    }\n  }\n}\n",
+    },
+    TemplateFile {
         relative_path: ".gitignore",
         content: "/target\n",
     },

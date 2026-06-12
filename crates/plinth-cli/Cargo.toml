@@ -15,3 +15,8 @@ path = "src/main.rs"
 clap = { workspace = true }
 plinth-scene = { path = "../plinth-scene", version = "0.0.1" }
 serde_json = { workspace = true }
+ureq = { version = "2", features = ["json"] }
+base64 = "0.22"
+
+[dev-dependencies]
+plinth = { path = "../plinth", version = "0.0.1" }

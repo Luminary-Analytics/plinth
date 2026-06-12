@@ -1,3 +1,4 @@
+mod mcp;
 mod new;
 
 use std::path::{Path, PathBuf};
@@ -29,6 +30,13 @@ enum Command {
     },
     /// Print the scene JSON Schema (the contract agents and editors validate against)
     Schema,
+    /// Serve the playtest MCP server: bridges a coding agent (stdio) to a
+    /// running game's playtest API so it can observe, drive, and screenshot it
+    Mcp {
+        /// BRP URL of the running game
+        #[arg(long, default_value = "http://127.0.0.1:15702")]
+        game: String,
+    },
     /// Scaffold a new Plinth game project
     New {
         /// Name of the project to create
@@ -47,6 +55,7 @@ fn main() -> ExitCode {
             );
             ExitCode::SUCCESS
         }
+        Command::Mcp { game } => mcp::serve(game),
         Command::New { name } => match new::create_project(&name) {
             Ok(root) => {
                 println!(

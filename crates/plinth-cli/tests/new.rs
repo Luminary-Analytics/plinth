@@ -34,6 +34,8 @@ fn new_scaffolds_a_valid_project() {
         "src/main.rs",
         "scenes/arena.scene.json",
         "README.md",
+        "CLAUDE.md",
+        ".mcp.json",
         ".gitignore",
     ] {
         assert!(root.join(file).is_file(), "missing {file}");

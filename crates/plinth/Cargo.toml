@@ -10,9 +10,14 @@ keywords = ["gamedev", "game-engine", "bevy", "3d", "ai"]
 categories = ["game-engines", "game-development"]
 
 [dependencies]
-bevy = { workspace = true }
+# bevy_remote powers the playtest server (BRP over HTTP).
+bevy = { workspace = true, features = ["bevy_remote"] }
 avian3d = { workspace = true }
 bevy-tnua = { workspace = true }
 bevy-tnua-avian3d = { workspace = true }
 leafwing-input-manager = { workspace = true }
 plinth-scene = { path = "../plinth-scene", version = "0.0.1" }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+ureq = { version = "2", features = ["json"] }

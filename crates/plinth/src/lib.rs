@@ -31,6 +31,7 @@
 mod camera;
 mod character;
 mod loader;
+mod playtest;
 mod plugins;
 
 pub use camera::OrbitCamera;
@@ -38,6 +39,7 @@ pub use character::{
     PlayerAction, PlayerControlled, PlinthScheme, PlinthSchemeConfig, default_input_map,
 };
 pub use loader::SceneEntity;
+pub use playtest::DEFAULT_PLAYTEST_PORT;
 
 // Re-export the stack so games depend on exactly the versions Plinth pins.
 pub use avian3d;
@@ -64,6 +66,7 @@ use bevy::prelude::*;
 pub struct Game {
     app: App,
     plugins_finished: bool,
+    playtest_port: Option<u16>,
 }
 
 impl Game {
@@ -82,6 +85,9 @@ impl Game {
         Self {
             app,
             plugins_finished: false,
+            // Debug builds serve the playtest API (agents observe and drive
+            // the running game); release builds don't open ports.
+            playtest_port: cfg!(debug_assertions).then_some(playtest::DEFAULT_PLAYTEST_PORT),
         }
     }
 
@@ -107,7 +113,19 @@ impl Game {
         Self {
             app,
             plugins_finished: false,
+            // Headless games (tests, CI) don't open ports unless asked to
+            // via [`Game::playtest_on_port`].
+            playtest_port: None,
         }
+    }
+
+    /// Serve the playtest API on this port (and enable it regardless of
+    /// build profile or headless mode). The API is what `plinth mcp`
+    /// connects to: scene snapshots, input injection, pause/step,
+    /// screenshots, and raw BRP queries.
+    pub fn playtest_on_port(mut self, port: u16) -> Self {
+        self.playtest_port = Some(port);
+        self
     }
 
     /// Queue a scene file (`*.scene.json`) to load at startup. May be called
@@ -142,6 +160,7 @@ impl Game {
     /// first call. The stepping primitive for tests and agent tooling.
     pub fn update(&mut self) {
         if !self.plugins_finished {
+            self.apply_playtest();
             self.app.finish();
             self.app.cleanup();
             self.plugins_finished = true;
@@ -151,6 +170,15 @@ impl Game {
 
     /// Run the game until exit.
     pub fn run(mut self) {
+        if !self.plugins_finished {
+            self.apply_playtest();
+        }
         let _ = self.app.run();
+    }
+
+    fn apply_playtest(&mut self) {
+        if let Some(port) = self.playtest_port.take() {
+            self.app.add_plugins(playtest::PlaytestPlugin { port });
+        }
     }
 }

@@ -1,0 +1,50 @@
+# {{name}} — a Plinth game
+
+This project is built on [Plinth](https://github.com/Luminary-Analytics/plinth),
+an AI-first 3D game framework on Bevy. This file tells you, the coding agent,
+how to work here effectively.
+
+## Commands
+
+- `cargo run` — run the game windowed. **Debug builds serve the playtest API
+  on port 15702**, which your `plinth` MCP tools connect to.
+- `plinth validate` — check every `scenes/*.scene.json` in milliseconds, with
+  exact paths and messages for anything wrong. Run it after editing scenes;
+  it never compiles Rust.
+- `plinth schema` — print the JSON Schema for scene files.
+
+## How to build things
+
+- **Content is data.** Levels live in `scenes/*.scene.json` with components:
+  `transform`, `shape`, `material`, `light`, `camera3d`, `rigid_body`,
+  `collider`, `character`. Scene files **hot-reload while the game runs** —
+  a valid save respawns the world in place; an invalid save logs diagnostics
+  and changes nothing.
+- **Behavior is Rust** in `src/`. The `plinth::prelude` gives you the Plinth
+  API plus the full Bevy prelude; raw Bevy ECS via `game.bevy()` is a
+  supported escape hatch, not a hack.
+- A `character` with `"player": true` already walks (WASD/left stick,
+  camera-relative), jumps (space), and has an orbit camera if a `camera3d`
+  has `"follow": "<its id>"`. Don't rebuild these; configure them.
+
+## Playtest the game yourself
+
+With the game running (`cargo run`), your MCP tools let you verify your own
+changes instead of asking the human to test:
+
+1. `scene_entities` — what exists and where (ids, positions, who's player).
+2. `inject_input` — press/release keys and move the mouse like a player.
+3. `game_time` — pause, then `step` exact 60 Hz ticks for precise physics
+   inspection.
+4. `screenshot` — see the rendered frame.
+5. `query` — raw Bevy Remote Protocol for any ECS state the above miss.
+
+A good loop: edit scene or code → `plinth validate` (or `cargo build`) →
+`scene_entities` to confirm the world → `inject_input` to play →
+`screenshot` to see → conclude with evidence.
+
+## Headless testing
+
+`plinth::Game::headless()` runs the full simulation without a window and
+steps deterministically — see the engine's integration tests for the
+pattern (`TimeUpdateStrategy::ManualDuration` + `game.update()`).
