@@ -1,6 +1,12 @@
 [workspace]
 resolver = "2"
-members = ["crates/plinth", "crates/plinth-cli", "spikes/physics-avian", "spikes/physics-rapier"]
+members = [
+    "crates/plinth",
+    "crates/plinth-cli",
+    "crates/plinth-scene",
+    "spikes/physics-avian",
+    "spikes/physics-rapier",
+]
 
 [workspace.package]
 version = "0.0.1"
@@ -13,6 +19,10 @@ authors = ["Rich Bellantoni and Plinth contributors"]
 # Plinth pins one Bevy minor per release and absorbs migration churn for users.
 bevy = "0.18"
 clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_path_to_error = "0.1"
+schemars = "1"
 
 # Compile-time budgets are a Plinth feature: light optimization for our code,
 # full optimization for dependencies, so dev rebuilds stay fast and the game

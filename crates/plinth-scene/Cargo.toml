@@ -1,0 +1,16 @@
+[package]
+name = "plinth-scene"
+description = "Plinth's scene data format: schema-published, strictly validated, Bevy-free for fast tooling."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+keywords = ["gamedev", "bevy", "scene", "schema"]
+categories = ["game-development"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_path_to_error = { workspace = true }
+schemars = { workspace = true }

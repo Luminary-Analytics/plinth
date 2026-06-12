@@ -1,0 +1,655 @@
+{
+  "$defs": {
+    "Camera3dDef": {
+      "additionalProperties": false,
+      "description": "A 3D perspective camera.",
+      "properties": {
+        "fov_degrees": {
+          "default": 45.0,
+          "description": "Vertical field of view in degrees, exclusive range (0, 180).",
+          "format": "float",
+          "type": "number"
+        },
+        "look_at": {
+          "description": "World-space point the camera looks at. When omitted, the camera uses\nits transform's rotation as-is.",
+          "items": {
+            "format": "float",
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": [
+            "array",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "CharacterDef": {
+      "additionalProperties": false,
+      "description": "A floating-capsule character controller: walking, jumping, slopes, and\nground snapping. Spawns with its own dynamic body and capsule collider.",
+      "properties": {
+        "float_height": {
+          "default": 1.25,
+          "description": "Height the capsule's center floats above the ground, in meters.\nMust exceed half the capsule's total height (`length / 2 + radius`),\nor the character would rest inside its own collider. Positive.",
+          "format": "float",
+          "type": "number"
+        },
+        "jump_height": {
+          "default": 1.5,
+          "description": "Apex height of a full jump in meters. `0` disables jumping.",
+          "format": "float",
+          "type": "number"
+        },
+        "length": {
+          "default": 1.0,
+          "description": "Collision capsule cylindrical length in meters. Positive.",
+          "format": "float",
+          "type": "number"
+        },
+        "player": {
+          "default": false,
+          "description": "This character is controlled by the local player's input.",
+          "type": "boolean"
+        },
+        "radius": {
+          "default": 0.5,
+          "description": "Collision capsule radius in meters. Positive.",
+          "format": "float",
+          "type": "number"
+        },
+        "speed": {
+          "default": 6.0,
+          "description": "Maximum walk speed in meters per second. Positive.",
+          "format": "float",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "ColliderDef": {
+      "description": "Physics collision geometry. Either `\"from_shape\"` (reuse the entity's\n`shape`) or an explicit primitive, e.g. `{ \"cuboid\": { \"size\": [1, 1, 1] } }`.",
+      "oneOf": [
+        {
+          "const": "from_shape",
+          "description": "Reuse this entity's `shape` as the collision geometry.",
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Axis-aligned box; `size` is the full extent on each axis in meters.",
+          "properties": {
+            "cuboid": {
+              "additionalProperties": false,
+              "properties": {
+                "size": {
+                  "description": "Full extents `[x, y, z]` in meters. All components positive.",
+                  "items": {
+                    "format": "float",
+                    "type": "number"
+                  },
+                  "maxItems": 3,
+                  "minItems": 3,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "size"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "cuboid"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Sphere of the given radius.",
+          "properties": {
+            "sphere": {
+              "additionalProperties": false,
+              "properties": {
+                "radius": {
+                  "description": "Radius in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "radius"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "sphere"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Capsule aligned to the Y axis (see `shape.capsule`).",
+          "properties": {
+            "capsule": {
+              "additionalProperties": false,
+              "properties": {
+                "length": {
+                  "description": "Cylindrical section length in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                },
+                "radius": {
+                  "description": "Hemisphere (and cylinder) radius in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "radius",
+                "length"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "capsule"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Cylinder aligned to the Y axis.",
+          "properties": {
+            "cylinder": {
+              "additionalProperties": false,
+              "properties": {
+                "height": {
+                  "description": "Full height in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                },
+                "radius": {
+                  "description": "Radius in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "radius",
+                "height"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "cylinder"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ComponentsDef": {
+      "additionalProperties": false,
+      "description": "The set of Plinth components an entity may have. Unknown keys are\nrejected — if a component name does not match this vocabulary,\nvalidation fails with the list of valid names.",
+      "properties": {
+        "camera3d": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Camera3dDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "A 3D camera. The scene's main view if present."
+        },
+        "character": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CharacterDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "A floating-capsule character controller (walk, jump, slopes). Brings\nits own physics body and capsule — do not combine with `rigid_body`\nor `collider`."
+        },
+        "collider": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ColliderDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Physics collision geometry. Use `\"from_shape\"` to reuse `shape`."
+        },
+        "light": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LightDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "A light source."
+        },
+        "material": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MaterialDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Surface appearance for `shape`. Requires `shape` on the same entity."
+        },
+        "rigid_body": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RigidBodyDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "How this entity participates in physics. `dynamic` and `kinematic`\nbodies require a `collider`."
+        },
+        "shape": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ShapeDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "A primitive 3D shape, rendered with this entity's `material` and\nusable for physics via `\"collider\": \"from_shape\"`."
+        },
+        "transform": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TransformDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Position, rotation, and scale in world space."
+        }
+      },
+      "type": "object"
+    },
+    "EntityDef": {
+      "additionalProperties": false,
+      "description": "One entity in a scene: a stable string id plus the components attached\nto it.",
+      "properties": {
+        "components": {
+          "$ref": "#/$defs/ComponentsDef",
+          "description": "The components attached to this entity. At least one is required."
+        },
+        "id": {
+          "description": "Stable identifier, unique within the scene. Lowercase letters,\ndigits, `-` and `_` (pattern: `^[a-z0-9][a-z0-9_-]*$`). Used for\ndiffs, cross-references, and runtime lookups.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "components"
+      ],
+      "type": "object"
+    },
+    "LightDef": {
+      "description": "A light source. Exactly one variant key, e.g.\n`{ \"directional\": { \"illuminance\": 10000 } }`.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "Sun-like light: parallel rays, position-independent. Aim it with the\nentity's `transform.rotation_degrees`.",
+          "properties": {
+            "directional": {
+              "additionalProperties": false,
+              "properties": {
+                "illuminance": {
+                  "default": 10000.0,
+                  "description": "Illuminance in lux. Non-negative. ~10,000 is overcast daylight.",
+                  "format": "float",
+                  "type": "number"
+                },
+                "shadows": {
+                  "default": true,
+                  "description": "Whether this light casts shadows.",
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "directional"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Omnidirectional light radiating from the entity's position.",
+          "properties": {
+            "point": {
+              "additionalProperties": false,
+              "properties": {
+                "intensity": {
+                  "default": 1000000.0,
+                  "description": "Luminous power in lumens. Non-negative.",
+                  "format": "float",
+                  "type": "number"
+                },
+                "range": {
+                  "default": 20.0,
+                  "description": "Falloff distance in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                },
+                "shadows": {
+                  "default": false,
+                  "description": "Whether this light casts shadows.",
+                  "type": "boolean"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "point"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "MaterialDef": {
+      "additionalProperties": false,
+      "description": "Surface appearance for an entity's `shape` (physically-based).",
+      "properties": {
+        "color": {
+          "default": "#ffffff",
+          "description": "Base color as a hex string: `#rgb` or `#rrggbb`.",
+          "type": "string"
+        },
+        "metallic": {
+          "default": 0.0,
+          "description": "Metalness, `0.0` (dielectric) to `1.0` (metal).",
+          "format": "float",
+          "type": "number"
+        },
+        "roughness": {
+          "default": 0.5,
+          "description": "Perceptual roughness, `0.0` (mirror) to `1.0` (fully diffuse).",
+          "format": "float",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "RigidBodyDef": {
+      "description": "How an entity participates in physics simulation.",
+      "oneOf": [
+        {
+          "const": "static",
+          "description": "Immovable world geometry (floors, walls).",
+          "type": "string"
+        },
+        {
+          "const": "dynamic",
+          "description": "Fully simulated: affected by gravity, forces, and collisions.",
+          "type": "string"
+        },
+        {
+          "const": "kinematic",
+          "description": "Moved by code, pushes dynamic bodies, unaffected by forces.",
+          "type": "string"
+        }
+      ]
+    },
+    "ShapeDef": {
+      "description": "A primitive 3D shape. Exactly one variant key, e.g.\n`{ \"cuboid\": { \"size\": [40, 1, 40] } }`.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "description": "Axis-aligned box; `size` is the full extent on each axis in meters.",
+          "properties": {
+            "cuboid": {
+              "additionalProperties": false,
+              "properties": {
+                "size": {
+                  "description": "Full extents `[x, y, z]` in meters. All components positive.",
+                  "items": {
+                    "format": "float",
+                    "type": "number"
+                  },
+                  "maxItems": 3,
+                  "minItems": 3,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "size"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "cuboid"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Sphere of the given radius.",
+          "properties": {
+            "sphere": {
+              "additionalProperties": false,
+              "properties": {
+                "radius": {
+                  "description": "Radius in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "radius"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "sphere"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Capsule aligned to the Y axis: a cylinder of `length` capped by two\nhemispheres of `radius`. Total height is `length + 2 * radius`.",
+          "properties": {
+            "capsule": {
+              "additionalProperties": false,
+              "properties": {
+                "length": {
+                  "description": "Cylindrical section length in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                },
+                "radius": {
+                  "description": "Hemisphere (and cylinder) radius in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "radius",
+                "length"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "capsule"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Cylinder aligned to the Y axis.",
+          "properties": {
+            "cylinder": {
+              "additionalProperties": false,
+              "properties": {
+                "height": {
+                  "description": "Full height in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                },
+                "radius": {
+                  "description": "Radius in meters. Positive.",
+                  "format": "float",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "radius",
+                "height"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "cylinder"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Flat rectangle on the XZ plane, facing +Y.",
+          "properties": {
+            "plane": {
+              "additionalProperties": false,
+              "properties": {
+                "size": {
+                  "description": "Extents `[width, depth]` in meters. Both positive.",
+                  "items": {
+                    "format": "float",
+                    "type": "number"
+                  },
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "size"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "plane"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "TransformDef": {
+      "additionalProperties": false,
+      "description": "Position, rotation, and scale in world space. Y is up; -Z is forward;\nunits are meters.",
+      "properties": {
+        "position": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "World-space position `[x, y, z]` in meters.",
+          "items": {
+            "format": "float",
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "rotation_degrees": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "description": "Rotation as Euler angles `[x, y, z]` in degrees, applied as yaw (Y),\nthen pitch (X), then roll (Z).",
+          "items": {
+            "format": "float",
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "scale": {
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "description": "Per-axis scale `[x, y, z]`. Each component must be positive.",
+          "items": {
+            "format": "float",
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A Plinth scene document: the on-disk format for levels and prefabs\n(`*.scene.json`). Behavior lives in Rust; scenes declare *what exists*.",
+  "properties": {
+    "$schema": {
+      "description": "Optional JSON Schema reference so editors and agents can validate\nthis file in place.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "entities": {
+      "description": "The entities this scene spawns, in order.",
+      "items": {
+        "$ref": "#/$defs/EntityDef"
+      },
+      "type": "array"
+    },
+    "name": {
+      "description": "Human-readable scene name. Defaults to the file stem when omitted.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "version": {
+      "description": "Scene format version. This version of Plinth understands `1`.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "entities"
+  ],
+  "title": "SceneDoc",
+  "type": "object"
+}
