@@ -105,6 +105,42 @@ Explicit non-promises for v1: Rust code hot-reload (may exist behind an experime
 
 Secondary: p50 time from "agent receives a change request" to "verified in running game."
 
+## 9a. Combat & gameplay façade (M4 — ratified 2026-06-16 via design interview)
+
+The combat layer for the showcase. Every decision reuses the proven pattern:
+**a generic, string-named, schema-validated concept with one sensible default,
+observable through the MCP, overridable via the raw-ECS escape hatch.** New
+scene-vocabulary components: `pools`, `team`, `on_death`, `ai`, `abilities`.
+
+| # | Decision | Choice |
+|---|----------|--------|
+| G1 | Resource pools | **Generic string-named pools**; `health` reserved (carries engine semantics: 0 → death). Each pool has `max` / `start` / `regen`. `mana`, `energy`, `rage`, `ammo` … are uniform bookkeeping with no special engine behavior. Uniform API: `pools.spend("mana", 10)`. |
+| G2 | Damage routing | **Event/message-based.** Anything dealing damage writes `Damage { target, amount, source }`; one engine system resolves it into the target's `health` pool and emits `Died` at 0. Modifiers (armor, i-frames, shields, resistances) are systems that sit *between* the message and the pool. Netcode-ready; gives the MCP a combat-event stream. |
+| G3 | Teams & friendly fire | **String-named teams, same-team-safe by default.** `"team": "players"` / `"goblins"`. Friendly fire is off *only* between entities sharing a (non-empty) team; everything else is a valid target. Unteamed entities (a `health`-bearing crate/barrel) are breakable by all and harm none — destructibles for free. A relationship-override table (allies/neutrals) is a future additive layer, **not** a v1 faction matrix. |
+| G4 | Death & lifecycle | **`Died { entity, source }` event + per-entity `on_death` policy:** `despawn` (default), `keep` (leave corpse/ragdoll for game code), or `respawn` (after a delay, at spawn point). Kills work with zero code; richer consequences (loot, score) are systems reading `Died`. No full alive→dying→dead state machine in v1 (presumes an animation system we haven't designed). |
+| G5 | Enemy AI | **Built-in named behaviors + engine perception.** Behaviors ship as small FSMs (`melee_chaser`, `ranged_kiter`, `passive`): idle → chase on sight → attack in range → flee at low health. Scene-configured: `"ai": { "behavior": "melee_chaser", "sight_range": 15, "attack_range": 2 }`. Engine provides perception (sight/attack range; target = nearest hostile-team entity) as components, and AI state is **MCP-observable** (`goblin-3: Chase, target player, 8m`). Custom behaviors are Rust systems over the same perception components. **v1 uses naive steer-toward-target** (fine for the open arena); navmesh pathing is the next spike (`oxidized_navigation` / `vleue_navigator`, deferred from M0). Behavior trees, if ever, layer *on top* of these primitives post-v1. |
+| G6 | Attacks & abilities | **Generic named abilities** — the keystone tying G1–G5 together. An entity has an `abilities` map; each ability = `cost` (named pool + amount), `cooldown`, `delivery` (melee arc \| projectile), `damage`. Bound to input actions (player) or triggered by AI behaviors (enemy). Pipeline: trigger → check cooldown + pool cost → spend pool (G1) → spawn delivery → on valid-team hit (G3) emit `Damage` (G2). This is what makes `mana`/`energy` meaningful and gives the showcase melee + ranged. **Largest single build of the six.** Delivery starts at melee + projectile; hitscan/AOE are documented follow-ons. |
+
+**How it coheres:** an ability (G6) spends a pool (G1), is gated by team (G3),
+emits a `Damage` message (G2) that can kill (G4), and is driven by either
+player input or enemy AI (G5). One data-flow, six legible components.
+
+**Showcase mapping (the M4 combat-arena template):** player has `health`/`mana`/`energy`
+pools, `team: players`, a `slash` ability (melee, energy cost) and a `fireball`
+(projectile, mana cost); goblins have `health`, `team: goblins`,
+`ai: melee_chaser`, and a melee ability; pickups restore pools; `Died` despawns
+goblins by default. Authored almost entirely in `*.scene.json`, validated by
+`plinth validate`, playtested by the agent over MCP.
+
+**Crate placement (provisional):** a `plinth-combat` module/crate behind the
+façade, with the data types in `plinth-scene` (so the schema and validation
+extend the existing contract). Confirm during implementation.
+
+**New MCP surface:** extend `plinth/scene` (or add `plinth/combat`) to report
+pools, team, AI state, and ability cooldowns per entity; add a combat-event
+subscription so an agent can assert "fireball dealt 30 to goblin-2, goblin-2
+Died" — the verification loop for combat changes.
+
 ## 10. Top risks & mitigations
 
 1. **Bevy churn tax** — pinning + absorbing migrations is recurring work. *Mitigate:* façade test suite as canary; upstream relationships; machine-readable migration guides.
